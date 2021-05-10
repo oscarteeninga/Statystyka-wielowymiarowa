@@ -16,7 +16,15 @@ Zadanie 1
 ```{r zad1}
 fit_l5 <- lm(medv ~ poly(lstat, 5), data = Boston)
 fit_l6 <- lm(medv ~ poly(lstat, 6), data = Boston)
-summary(fit_l5)
-summary(fit_l6)
-# Lepsze efekty daje wielomian 5 stopnia
+
+summary_l5 <- summary(fit_l5)
+summary_l6 <- summary(fit_l6)
+
+if (summary_l5$sigma > summary_l6$sigma) {
+  print('Lepszy jest wielomian 6 stopnia')
+} else if (summary_l5$sigma < summary_l6$sigma) {
+  print('lepszy jest wielomian 5 stopnia')
+} else {
+  print('Oba wielomiany sa tak samo dobre')
+}
 ```

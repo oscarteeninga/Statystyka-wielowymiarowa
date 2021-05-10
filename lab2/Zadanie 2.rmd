@@ -27,4 +27,6 @@ if (summary_l5$sigma > summary_l6$sigma) {
 } else {
   print('Oba wielomiany sa tak samo dobre')
 }
+
+anova(fit_l5, fit_l6)
 ```

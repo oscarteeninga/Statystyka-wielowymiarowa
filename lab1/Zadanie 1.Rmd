@@ -1,0 +1,62 @@
+---
+title: "Zadanie"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(ISLR)
+```
+
+## Zadanie
+
+```{r 1}
+print("Średnia zużycia paliwa: ")
+mean(Auto$mpg)
+```
+```{r 2}
+print("Średnia zużycia paliwa (4 cylindry): ")
+mean(Auto$mpg[Auto$cylinders == 4])
+```
+```{r 3}
+print("Mediana mas: ")
+median(Auto$weight)
+```
+```{r 4}
+print("Średnia zużycia paliwa (rok 1972): ")
+mean(Auto$mpg[Auto$year == 72])
+```
+```{r 5}
+print("Wariancja przyśpieszenia: ")
+var(Auto$acceleration)
+```
+```{r 6}
+print("Wariancja przyśpieszenia (japońskie - 3): ")
+var(Auto$acceleration[Auto$origin == 3])
+```
+```{r 7}
+print("Samochodów z mocą powyżej średniej: ")
+length(Auto$horsepower[Auto$horsepower > mean(Auto$horsepower)])
+```
+
+```{r 8}
+print("Maksymalna moc samochodów (waga poniżej średniej): ")
+max(Auto$horsepower[Auto$weight < mean(Auto$weight)])
+```
+```{r 9}
+print("Zużycie paliwa poniżej średniej: ")
+length(Auto$mpg[Auto$mpg > mean(Auto$mpg)])
+```
+```{r 10}
+print("Minimalna liczba cylindrów (zużycie paliwa poniżej średniej): ")
+min(Auto$cylinders[Auto$mpg > mean(Auto$mpg)])
+```
+```{r 11}
+print("Liczba samochodów o maksymalnej pojemności silnika: ")
+length(Auto$mpg[Auto$displacement == max(Auto$displacement)])
+print("Maksymalna pojemność: ")
+max(Auto$displacement)
+```
+```{r 12}
+print("Maksymalna waga samochodu (pojemność silnika mniejsza od mediany): ")
+max(Auto$weight[Auto$displacement < median(Auto$displacement)])
+```

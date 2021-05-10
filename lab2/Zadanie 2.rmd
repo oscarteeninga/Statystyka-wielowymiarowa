@@ -1,0 +1,22 @@
+---
+title: "Zadanie regresja liniowa"
+#author: "Oscar Teeninga"
+date: "Semestr letni 2020/21"
+output: html_document
+---
+
+Przygotowanie
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(MASS)
+install.packages("ISLR", dependencies = TRUE)
+```
+
+Zadanie 1
+```{r zad1}
+fit_l5 <- lm(medv ~ poly(lstat, 5), data = Boston)
+fit_l6 <- lm(medv ~ poly(lstat, 6), data = Boston)
+summary(fit_l5)
+summary(fit_l6)
+# Lepsze efekty daje wielomian 5 stopnia
+```

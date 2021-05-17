@@ -1,0 +1,62 @@
+---
+title: "Podstawowe metody klasyfikacji"
+#author: "Oscar Teeninga"
+date: "Semestr letni 2020/21"
+output: html_document
+---
+
+Przygotowanie
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE)
+library(ISLR)
+library(MASS)
+library(class)
+```
+
+Dla ósmej obserwacji z 2005 roku wyznacz prawdopodobieństwo spadku wartości indeksu wyznaczone przez:
+```{r zad0}
+Smarket_train <- Smarket$Year < 2005
+Smarket_test <- Smarket[!Smarket_train,]
+sample <- 8
+```
+
+Regresja logiczna
+```{r zad1}
+dir_log_t <- list()
+dir_log_t$fit <- glm(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, 
+                   family = binomial, data = Smarket, subset = Smarket_train)
+dir_log_t$probs <- predict(dir_log_t$fit, Smarket_test, type = "response")
+(1-dir_log_t$probs[sample:sample])
+```
+
+LDA
+```{r zad2}
+dir_lda <- list()
+dir_lda$fit <- lda(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Smarket, subset = Smarket_train)
+dir_lda$predicted <- predict(dir_lda$fit, Smarket_test)
+dir_lda$predicted$posterior[sample,]["Down"]
+```
+
+QDA
+```{r zad3}
+dir_qda <- list()
+dir_qda$fit <- qda(Direction ~ Lag1 + Lag2 + Lag3 + Lag4 + Lag5 + Volume, data = Smarket, subset = Smarket_train)
+dir_qda$predicted <- predict(dir_qda$fit, Smarket_test)
+dir_qda$predicted$posterior[sample,]["Down"]
+```
+
+KNN k=4
+```{r zad4}
+train_set <- Smarket[Smarket_train, c("Lag1", "Lag2", "Lag3", "Lag4", "Lag5", "Volume")]
+test_set <- Smarket[!Smarket_train, c("Lag1", "Lag2", "Lag3", "Lag4", "Lag5", "Volume")]
+Direction_train <- Smarket$Direction[Smarket_train]
+Direction_test <- Smarket$Direction[!Smarket_train]
+dir_knn_4 <- knn(train_set, test_set, Direction_train, k = 4, prob = TRUE)
+directory <- dir_knn_4[sample:sample]
+value <- attributes(dir_knn_4)$prob[sample:sample]
+if (directory == "Down") {
+  value 
+} else {
+  1-value
+}
+```

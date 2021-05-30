@@ -1,10 +1,13 @@
 ---
-title: "Projekt Auta - Oscar Teeninga i Tomasz Markiewicz"
+title: "Projekt Baseball - Oscar Teeninga i Tomasz Markiewicz"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 library(ISLR)
+library(class)
+library(MASS)
+knitr::opts_chunk$set(message = FALSE)
 ```
 
 ## Zbiór danych
@@ -13,50 +16,31 @@ library(ISLR)
 print("Zbiór danych z 322 obserwacjami dotyczących główych graczy ligowych baseballu z roku 1986 i 1987. Liczba zmiennych: 20")
 print(Hitters)
 ```
-```{r 2}
-print("Średnia zużycia paliwa (4 cylindry): ")
-mean(Auto$mpg[Auto$cylinders == 4])
-```
-```{r 3}
-print("Mediana mas: ")
-median(Auto$weight)
-```
-```{r 4}
-print("Średnia zużycia paliwa (rok 1972): ")
-mean(Auto$mpg[Auto$year == 72])
-```
-```{r 5}
-print("Wariancja przyśpieszenia: ")
-var(Auto$acceleration)
-```
-```{r 6}
-print("Wariancja przyśpieszenia (japońskie - 3): ")
-var(Auto$acceleration[Auto$origin == 3])
-```
-```{r 7}
-print("Samochodów z mocą powyżej średniej: ")
-length(Auto$horsepower[Auto$horsepower > mean(Auto$horsepower)])
+## Podział zbioru na treningowy i testowy
+```{r split dataset}
+set.seed(123)
+sample <- sample.int(n = nrow(Hitters), size = floor(.8*nrow(Hitters)), replace = F)
+train <- Hitters[sample, ]
+test  <- Hitters[-sample, ]
 ```
 
-```{r 8}
-print("Maksymalna moc samochodów (waga poniżej średniej): ")
-max(Auto$horsepower[Auto$weight < mean(Auto$weight)])
+## League
+```{r league-glm}
+legue_glm <- list()
+legue_glm$fit <- glm(League ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + CAtBat + CHits + CHmRun + CRuns + CRBI + CWalks + Division + PutOuts + Assists + Errors + Salary + NewLeague, family = binomial, data = train)
+legue_glm$probs <- predict(legue_glm$fit, test, type = "response")
+legue_glm$predicted <- ifelse(legue_glm$probs > 0.5, "N", "A")
+table(legue_glm$predicted, test$League)
 ```
-```{r 9}
-print("Zużycie paliwa poniżej średniej: ")
-length(Auto$mpg[Auto$mpg > mean(Auto$mpg)])
+```{r league-lda}
+legue_lda <- list()
+legue_lda$fit <- lda(League ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + CAtBat + CHits + CHmRun + CRuns + CRBI + CWalks + Division + PutOuts + Assists + Errors + Salary + NewLeague, family = binomial, data = train)
+legue_lda$predicted <- predict(legue_lda$fit, test)
+table(legue_lda$predicted$class, test$League)
 ```
-```{r 10}
-print("Minimalna liczba cylindrów (zużycie paliwa poniżej średniej): ")
-min(Auto$cylinders[Auto$mpg > mean(Auto$mpg)])
-```
-```{r 11}
-print("Liczba samochodów o maksymalnej pojemności silnika: ")
-length(Auto$mpg[Auto$displacement == max(Auto$displacement)])
-print("Maksymalna pojemność: ")
-max(Auto$displacement)
-```
-```{r 12}
-print("Maksymalna waga samochodu (pojemność silnika mniejsza od mediany): ")
-max(Auto$weight[Auto$displacement < median(Auto$displacement)])
+```{r league-qda}
+legue_qda <- list()
+legue_qda$fit <- qda(League ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + CAtBat + CHits + CHmRun + CRuns + CRBI + CWalks + Division + PutOuts + Assists + Errors + Salary + NewLeague, family = binomial, data = train)
+legue_qda$predicted <- predict(legue_qda$fit, test)
+table(legue_qda$predicted$class, test$League)
 ```

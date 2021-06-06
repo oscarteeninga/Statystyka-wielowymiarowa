@@ -6,16 +6,18 @@ output: html_document
 ```{r setup, include=FALSE}
 library(ISLR)
 library(class)
+library(leaps)
 library(MASS)
 knitr::opts_chunk$set(message = FALSE)
 ```
 
 ## Zbiór danych
-
 ```{r dane}
 print("Zbiór danych z 322 obserwacjami dotyczących główych graczy ligowych baseballu z roku 1986 i 1987. Liczba zmiennych: 20")
+Hitters <- na.omit(Hitters)
 print(Hitters)
 ```
+
 ## Podział zbioru na treningowy i testowy
 ```{r split dataset}
 set.seed(123)
@@ -25,22 +27,59 @@ test  <- Hitters[-sample, ]
 ```
 
 ## League
+```{r league-cechy}
+Hitters_league <- regsubsets(League ~ ., data = Hitters, nvmax = 19)
+plot(Hitters_league, scale="adjr2")
+```
+
 ```{r league-glm}
 legue_glm <- list()
-legue_glm$fit <- glm(League ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + CAtBat + CHits + CHmRun + CRuns + CRBI + CWalks + Division + PutOuts + Assists + Errors + Salary + NewLeague, family = binomial, data = train)
+legue_glm$fit <- glm(League ~ ., family = binomial, data = train)
 legue_glm$probs <- predict(legue_glm$fit, test, type = "response")
 legue_glm$predicted <- ifelse(legue_glm$probs > 0.5, "N", "A")
 table(legue_glm$predicted, test$League)
 ```
+
 ```{r league-lda}
 legue_lda <- list()
-legue_lda$fit <- lda(League ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + CAtBat + CHits + CHmRun + CRuns + CRBI + CWalks + Division + PutOuts + Assists + Errors + Salary + NewLeague, family = binomial, data = train)
+legue_lda$fit <- lda(League ~ ., family = binomial, data = train)
 legue_lda$predicted <- predict(legue_lda$fit, test)
 table(legue_lda$predicted$class, test$League)
+summary(legue_lda$fit)
 ```
-```{r league-qda}
-legue_qda <- list()
-legue_qda$fit <- qda(League ~ AtBat + Hits + HmRun + Runs + RBI + Walks + Years + CAtBat + CHits + CHmRun + CRuns + CRBI + CWalks + Division + PutOuts + Assists + Errors + Salary + NewLeague, family = binomial, data = train)
-legue_qda$predicted <- predict(legue_qda$fit, test)
-table(legue_qda$predicted$class, test$League)
+
+```{r league-lm4}
+legue_lm4 <- list()
+legue_lm4$fit <- lm(League ~ poly(Salary, 4), data = train)
+legue_lm4$predicted <- predict(legue_lm4$fit, test)
+table(legue_lm4$predicted, test$League)
+```
+
+
+## Salary
+```{r salary-cechy}
+Hitters_salary <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19)
+plot(Hitters_salary, scale="adjr2")
+```
+
+```{r salary-glm}
+salary_glm <- list()
+salary_glm$fit <- glm(Salary ~ ., data = train)
+salary_glm$predicted <- predict(salary_glm$fit, test, type = "response")
+table(salary_glm$predicted, test$Salary)
+```
+
+```{r salary-lda}
+salary_lda <- list()
+salary_lda$fit <- lda(Salary ~ ., data = train)
+salary_lda$predicted <- predict(salary_lda$fit, test)
+table(salary_lda$predicted$class, test$Salary)
+summary(salary_lda$fit)
+```
+
+```{r salary-lm4}
+salary_lm4 <- list()
+salary_lm4$fit <- lm(Salary ~ poly(Walks, 4), data = train)
+salary_lm4$predicted <- predict(salary_lm4$fit, test)
+table(salary_qda$predicted, test$Salary)
 ```

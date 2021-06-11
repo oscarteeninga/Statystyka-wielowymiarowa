@@ -1,5 +1,5 @@
 ---
-title: "Projekt Baseball - Oscar Teeninga i Tomasz Markiewicz"
+title: "Projekt Hitters - Oscar Teeninga i Tomasz Markiewicz"
 output: html_document
 ---
 
@@ -11,14 +11,14 @@ library(MASS)
 knitr::opts_chunk$set(message = FALSE)
 ```
 
-## Zbiór danych
+# Zbiór danych
 ```{r dane}
 print("Zbiór danych z 322 obserwacjami dotyczących główych graczy ligowych baseballu z roku 1986 i 1987. Liczba zmiennych: 20")
 Hitters <- na.omit(Hitters)
 print(Hitters)
 ```
 
-## Podział zbioru na treningowy i testowy
+# Podział zbioru na treningowy i testowy
 ```{r split dataset}
 set.seed(123)
 sample <- sample.int(n = nrow(Hitters), size = floor(.8*nrow(Hitters)), replace = F)
@@ -26,60 +26,72 @@ train <- Hitters[sample, ]
 test  <- Hitters[-sample, ]
 ```
 
-## League
-```{r league-cechy}
-Hitters_league <- regsubsets(League ~ ., data = Hitters, nvmax = 19)
-plot(Hitters_league, scale="adjr2")
-```
+# Pierwszy problem regresji - League od pozostałych zmiennych (prócz NewLeague i Division)
 
+## Cechy najbardziej znaczące
+```{r league-cechy}
+Hitters_league <- regsubsets(League ~ . - NewLeague - Division, data = Hitters, nvmax = 19)
+plot(Hitters_league, scale="adjr2")
+names(Hitters)
+```
+## Regresja logiczna
 ```{r league-glm}
 legue_glm <- list()
-legue_glm$fit <- glm(League ~ ., family = binomial, data = train)
+legue_glm$fit <- glm(League ~ . - NewLeague - Division, family = binomial, data = train)
 legue_glm$probs <- predict(legue_glm$fit, test, type = "response")
 legue_glm$predicted <- ifelse(legue_glm$probs > 0.5, "N", "A")
 table(legue_glm$predicted, test$League)
 ```
 
+## LDA
 ```{r league-lda}
 legue_lda <- list()
-legue_lda$fit <- lda(League ~ ., family = binomial, data = train)
+legue_lda$fit <- lda(League ~ . - NewLeague - Division, family = binomial, data = train)
 legue_lda$predicted <- predict(legue_lda$fit, test)
 table(legue_lda$predicted$class, test$League)
-summary(legue_lda$fit)
 ```
 
-```{r league-lm4}
-legue_lm4 <- list()
-legue_lm4$fit <- lm(League ~ poly(Salary, 4), data = train)
-legue_lm4$predicted <- predict(legue_lm4$fit, test)
-table(legue_lm4$predicted, test$League)
+### Regresja wielomianowa N = 2 (Uwaga! Obliczenia długo trwają)
+```{r league-lm2}
+legue_lm2 <- list()
+legue_lm2$fit <- lm(League ~ polym(AtBat,Hits,HmRun,Runs,RBI,Walks,Years,CAtBat,CHits,CHmRun,CRuns,CRBI,CWalks,PutOuts,Assists,Salary, degree = 2), data = train)
+legue_lm2$predicted <- predict(legue_lm2$fit, test)
+table(legue_lm2$predicted, test$League)
 ```
 
-
-## Salary
+# Drugi problem regresji - Salary od reszty zmiennych
 ```{r salary-cechy}
 Hitters_salary <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19)
 plot(Hitters_salary, scale="adjr2")
 ```
-
+## Regrasja logiczna
 ```{r salary-glm}
+salary_median = median(test$Salary)
 salary_glm <- list()
 salary_glm$fit <- glm(Salary ~ ., data = train)
-salary_glm$predicted <- predict(salary_glm$fit, test, type = "response")
-table(salary_glm$predicted, test$Salary)
+salary_glm$probs <- predict(salary_glm$fit, test, type = "response")
+salary_glm_salary_predicted <- ifelse(salary_glm$probs > salary_median, "Rich", "Poor")
+salary_glm_salary = ifelse(test$Salary > salary_median, "Rich", "Poor")
+table(salary_glm_salary_predicted, salary_glm_salary)
 ```
 
+## LDA
 ```{r salary-lda}
+salary_median = median(test$Salary)
 salary_lda <- list()
 salary_lda$fit <- lda(Salary ~ ., data = train)
 salary_lda$predicted <- predict(salary_lda$fit, test)
-table(salary_lda$predicted$class, test$Salary)
-summary(salary_lda$fit)
+salary_lda_salary_predicted = ifelse(as.numeric(salary_lda$predicted$class) > salary_median, "Rich", "Poor")
+salary_lda_salary = ifelse(test$Salary > salary_median, "Rich", "Poor")
+table(salary_lda_salary_predict, salary_lda_salary)
 ```
 
-```{r salary-lm4}
-salary_lm4 <- list()
-salary_lm4$fit <- lm(Salary ~ poly(Walks, 4), data = train)
-salary_lm4$predicted <- predict(salary_lm4$fit, test)
-table(salary_qda$predicted, test$Salary)
+## Regresja wielomianowa N = 2 (Uwaga! Obliczenia długo trwają, dlatego jest mniej zmiennych)
+```{r salary-lm2}
+salary_lm2 <- list()
+salary_lm2$fit <- lm(Salary ~ polym(AtBat,Hits,Runs,RBI,Walks,Assists, degree = 2), data = train)
+salary_lm2$predicted <- predict(salary_lm2$fit, test)
+salary_lm2_salary_predicted = ifelse(as.numeric(salary_lm2$predicted) > salary_median, "Rich", "Poor")
+salary_lm2_salary = ifelse(test$Salary > salary_median, "Rich", "Poor")
+table(salary_lm2_salary_predicted, salary_lm2_salary)
 ```

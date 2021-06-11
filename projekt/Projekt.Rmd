@@ -53,10 +53,11 @@ table(legue_lda$predicted$class, test$League)
 
 ### Regresja wielomianowa N = 2 (Uwaga! Obliczenia długo trwają)
 ```{r league-lm2}
-legue_lm2 <- list()
-legue_lm2$fit <- lm(League ~ polym(AtBat,Hits,HmRun,Runs,RBI,Walks,Years,CAtBat,CHits,CHmRun,CRuns,CRBI,CWalks,PutOuts,Assists,Salary, degree = 2), data = train)
-legue_lm2$predicted <- predict(legue_lm2$fit, test)
-table(legue_lm2$predicted, test$League)
+league_lm2 <- list()
+league_lm2$fit <- lm(League ~ polym(AtBat,Hits,HmRun,Runs,RBI,Walks,Years,CAtBat,CHits,CHmRun,CRuns,CRBI,CWalks,PutOuts,Assists,Salary, degree = 2), data = train)
+league_lm2$predicted <- predict(league_lm2$fit, test)
+table(league_lm2$predicted, test$League)
+# Nie widać wyraźnego miejsca w którym można byłoby postawić "kreskę", która oddzielałaby klasy między sobą, także wydaje się, że regresja wielomianowa przy tych parametrach nie daje fajnych efektów. 
 ```
 
 # Drugi problem regresji - Salary od reszty zmiennych
@@ -88,6 +89,7 @@ table(salary_lda_salary_predict, salary_lda_salary)
 
 ## Regresja wielomianowa N = 2 (Uwaga! Obliczenia długo trwają, dlatego jest mniej zmiennych)
 ```{r salary-lm2}
+salary_median = median(test$Salary)
 salary_lm2 <- list()
 salary_lm2$fit <- lm(Salary ~ polym(AtBat,Hits,Runs,RBI,Walks,Assists, degree = 2), data = train)
 salary_lm2$predicted <- predict(salary_lm2$fit, test)

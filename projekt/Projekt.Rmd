@@ -4,10 +4,14 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+install.packages("glmnet", repos = "https://cran.us.r-project.org")
+install.packages("plotmo", repos = "https://cran.us.r-project.org")
 library(ISLR)
 library(class)
 library(leaps)
 library(MASS)
+library(glmnet)
+library(plotmo)
 knitr::opts_chunk$set(message = FALSE)
 ```
 
@@ -19,7 +23,7 @@ print(Hitters)
 ```
 
 # Podział zbioru na treningowy i testowy
-```{r split dataset}
+```{r split dataset 2}
 set.seed(123)
 sample <- sample.int(n = nrow(Hitters), size = floor(.8*nrow(Hitters)), replace = F)
 train <- Hitters[sample, ]
@@ -59,12 +63,69 @@ league_lm2$predicted <- predict(league_lm2$fit, test)
 table(league_lm2$predicted, test$League)
 # Nie widać wyraźnego miejsca w którym można byłoby postawić "kreskę", która oddzielałaby klasy między sobą, także wydaje się, że regresja wielomianowa przy tych parametrach nie daje fajnych efektów. 
 ```
+## Regresja zmiennej 'New league'
+### Regresje nieliniowe
+## Regresje grzbietowe
+```{r}
+X <- model.matrix(League ~ . - NewLeague - Division, data = Hitters)[, -1]
+y <- as.numeric(Hitters$NewLeague)
+lambda.grid <- 10^seq(10, -2, length.out = 10)
+fit.ridge <- glmnet(X, y, alpha = 0, family = "binomial")
+set.seed(1)
+n <- nrow(X)
+train <- sample(1:n, n / 2)
+test <- -train
+```
+
+dla przykładowego lambda = 7
+```{r}
+pred.ridge <- predict(fit.ridge, x = X[train,], y = y[train], s = 7, newx = X[test,])
+mean((pred.ridge - y[test])^2)
+```
+
+dla optymalnego lambda
+```{r}
+cv.out <- cv.glmnet(X[train,], y[train], alpha = 0, family = "binomial")
+plot(cv.out)
+cv.out$lambda.min # optymalne lambda
+fit.ridge <- glmnet(X[train,], y[train], alpha = 0, lambda = lambda.grid, thresh = 1e-12, family = "binomial")
+pred.ridge <- predict(fit.ridge, s = cv.out$lambda.min, newx = X[test,])
+mean((pred.ridge - y[test])^2)
+```
+## Regresja Lasso
+```{r}
+fit.lasso <- glmnet(X[train,], y[train], alpha = 1, family = "binomial")
+cv.out <- cv.glmnet(X[train,], y[train], alpha = 1, family = "binomial")
+plot(cv.out)
+cv.out$lambda.min
+pred.lasso <- predict(fit.lasso, s = cv.out$lambda.min, newx = X[test,])
+mean((pred.lasso - y[test])^2)
+```
+## Wykresy regresja grzbietowa
+```{r}
+plot_glmnet(fit.ridge, labels =FALSE)
+```
+## Wykres regresji Lasso
+```{r}
+plot_glmnet(fit.lasso, labels =FALSE)
+```
+
 
 # Drugi problem regresji - Salary od reszty zmiennych
 ```{r salary-cechy}
 Hitters_salary <- regsubsets(Salary ~ ., data = Hitters, nvmax = 19)
 plot(Hitters_salary, scale="adjr2")
 ```
+
+
+# Podział zbioru na treningowy i testowy
+```{r split dataset}
+set.seed(123)
+sample <- sample.int(n = nrow(Hitters), size = floor(.8*nrow(Hitters)), replace = F)
+train <- Hitters[sample, ]
+test  <- Hitters[-sample, ]
+```
+
 ## Regrasja logiczna
 ```{r salary-glm}
 salary_median = median(test$Salary)
@@ -76,6 +137,7 @@ salary_glm_salary = ifelse(test$Salary > salary_median, "Rich", "Poor")
 table(salary_glm_salary_predicted, salary_glm_salary)
 ```
 
+
 ## LDA
 ```{r salary-lda}
 salary_median = median(test$Salary)
@@ -84,7 +146,7 @@ salary_lda$fit <- lda(Salary ~ ., data = train)
 salary_lda$predicted <- predict(salary_lda$fit, test)
 salary_lda_salary_predicted = ifelse(as.numeric(salary_lda$predicted$class) > salary_median, "Rich", "Poor")
 salary_lda_salary = ifelse(test$Salary > salary_median, "Rich", "Poor")
-table(salary_lda_salary_predict, salary_lda_salary)
+table(salary_lda_salary_predicted, salary_lda_salary)
 ```
 
 ## Regresja wielomianowa N = 2 (Uwaga! Obliczenia długo trwają, dlatego jest mniej zmiennych)
@@ -93,7 +155,69 @@ salary_median = median(test$Salary)
 salary_lm2 <- list()
 salary_lm2$fit <- lm(Salary ~ polym(AtBat,Hits,Runs,RBI,Walks,Assists, degree = 2), data = train)
 salary_lm2$predicted <- predict(salary_lm2$fit, test)
+```
+
+
+```{r salary-lm2 part 2}
 salary_lm2_salary_predicted = ifelse(as.numeric(salary_lm2$predicted) > salary_median, "Rich", "Poor")
 salary_lm2_salary = ifelse(test$Salary > salary_median, "Rich", "Poor")
 table(salary_lm2_salary_predicted, salary_lm2_salary)
+```
+
+## Regresja zmiennej 'salary'
+### Regresje liniowe
+```{r}
+cols <- names(Hitters)
+cols <- cols[!cols %in% c("Salary")]
+lm.hitters <- vector("list", length(cols))
+for(i in seq_along(cols)){
+    lm.hitters[[i]] <- lm(reformulate(cols[i], "Salary"), data = Hitters)
+}
+summaries <- lapply(lm.hitters, summary)
+cols
+summaries
+```
+### Regresje nieliniowe
+## Regresje grzbietowe
+```{r}
+X <- model.matrix(Hitters$Salary ~ ., data = Hitters)[, -1]
+y <- Hitters$Salary
+fit.ridge <- glmnet(X, y, alpha = 0)
+set.seed(1)
+n <- nrow(X)
+train <- sample(1:n, n / 2)
+test <- -train
+```
+
+dla przykładowego lambda = 5
+```{r}
+pred.ridge <- predict(fit.ridge, x = X[train,], y = y[train], s = 7, newx = X[test,])
+mean((pred.ridge - y[test])^2)
+```
+
+dla optymalnego lambda
+```{r}
+cv.out <- cv.glmnet(X[train,], y[train], alpha = 0)
+plot(cv.out)
+cv.out$lambda.min # optymalne lambda
+fit.ridge <- glmnet(X[train,], y[train], alpha = 0, thresh = 1e-12)
+pred.ridge <- predict(fit.ridge, s = cv.out$lambda.min, newx = X[test,])
+mean((pred.ridge - y[test])^2)
+```
+## Regresja Lasso
+```{r}
+fit.lasso <- glmnet(X[train,], y[train], alpha = 1)
+cv.out <- cv.glmnet(X[train,], y[train], alpha = 1)
+plot(cv.out)
+cv.out$lambda.min
+pred.lasso <- predict(fit.lasso, s = cv.out$lambda.min, newx = X[test,])
+mean((pred.lasso - y[test])^2)
+```
+## Wykresy regresja grzbietowa
+```{r}
+plot_glmnet(fit.ridge, labels =FALSE)
+```
+## Wykres regresji Lasso
+```{r}
+plot_glmnet(fit.lasso, labels =FALSE)
 ```
